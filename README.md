@@ -8,7 +8,8 @@ Connecting to WebService
 
 ```powershell
 Import-Module .\isim.psm1
-Connect-ISIM -isimuid "itim manager" -isimpwd "secret" -isim_url "http://localhost:9080" -ou_name "Organization A" 
+$cred = Get-Credential
+Connect-ISIM -Credential $cred -isim_url "http://localhost:9080" -ou_name "Organization A" 
  
 # Remove Role From User by UID
 Get-ISIMPerson -UID "UserA" | Remove-ISIMRole -roleDN "erglobalid=1234567890123456789,ou=roles,erglobalid=00000000000000000000,ou=CORP,dc=de"
