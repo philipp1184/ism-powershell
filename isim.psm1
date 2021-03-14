@@ -1,51 +1,12 @@
 <#
-
-
-
-
+    .SYNOPSIS
+        PowerShell Module for IBM Security Identity Manager SOAP Web Service
+    .DESCRIPTION
+        This Module provides Methods to Access SOAP API from IBM Security Identity
+		Manager (ISIM) from IBM. It gives the ability to script and automate
+		administrative Tasks. 
 #>
 
-<#
-## Initialize SOAP WSDL URLs
-$script:isim_url = "http://localhost:9080"
-$script:isim_wsdl_session=$isim_url+"/itim/services/WSSessionService/WEB-INF/wsdl/WSSessionService.wsdl"
-$script:isim_wsdl_person=$isim_url+"/itim/services/WSPersonServiceService/WEB-INF/wsdl/WSPersonService.wsdl"
-$script:isim_wsdl_searchdata=$isim_url+"/itim/services/WSSearchDataServiceService/WEB-INF/wsdl/WSSearchDataService.wsdl"
-$script:isim_wsdl_account=$isim_url+"/itim/services/WSAccountServiceService/WEB-INF/wsdl/WSAccountService.wsdl"
-$script:isim_wsdl_container=$isim_url+"/itim/services/WSOrganizationalContainerServiceService/WEB-INF/wsdl/WSOrganizationalContainerService.wsdl"
-$script:isim_wsdl_service=$isim_url+"/itim/services/WSServiceServiceService/WEB-INF/wsdl/WSServiceService.wsdl"
-$script:isim_wsdl_password=$isim_url+"/itim/services/WSPasswordServiceService/WEB-INF/wsdl/WSPasswordService.wsdl"
-$script:isim_wsdl_request=$isim_url+"/itim/services/WSRequestServiceService/WEB-INF/wsdl/WSRequestService.wsdl"
-$script:isim_wsdl_role=$isim_url+"/itim/services/WSRequestServiceService/WEB-INF/wsdl/WSRoleService.wsdl"
-
-
-## Initialize WS Proxy Object for each Service URL
-$script:session_prx = $null
-$script:person_prx = $null
-$script:search_prx = $null
-$script:account_prx = $null
-$script:container_prx = $null
-$script:service_prx = $null
-$script:password_prx = $null
-$script:request_prx = $null
-$script:role_prx = $null
-
-
-## Initialize Session Namespace
-$script:session_ns = $null
-$script:person_ns = $null
-$script:search_ns = $null
-$script:account_ns = $null
-$script:container_ns = $null
-$script:service_ns = $null
-$script:password_ns = $null
-$script:request_ns = $null
-$script:role_ns = $null
-
-
-## Initialize Root Container
-$script:rootContainer = $null
-#>
 
 function Copy-ISIMObjectNamespace {
     param( 	
@@ -85,9 +46,7 @@ function Test-ISIMSession {
 
         if($script:session -eq $null) {
             Write-Error "No Active ISIM WS Session" -ErrorAction Stop
-        }      
-        
-        $true  
+        }
 
     }
 }
@@ -273,6 +232,32 @@ function Get-ISIMPersonUID2DN {
 
     }
 }
+
+function Get-ISIMPersonByFilter {
+    [OutputType([string])]
+    [OutputType([psobject])]
+    param (
+        [Parameter(Mandatory=$true,Position=0)]
+        [string]$filter
+    )
+    begin {
+        Test-ISIMSession
+    }
+    process {
+        $person_dn = $null;
+        #$attrList = nul; # Optional, supply an array of attribute names to be returned. 
+        # A null value will return all attributes. 
+        $persons = $person_prx.searchPersonsFromRoot($script:psession, $filter, $attrList); 
+
+        if ( $persons.Count -lt 1 ) {
+            Write-Host -ForegroundColor Red "Search Filter '$filter' has no results."
+        } 
+
+        $persons
+
+    }
+}
+
 
 function Add-ISIMRoleToPerson {
     param (
@@ -482,18 +467,54 @@ function Get-ISIMRoleDN {
 
 }
 
+function Get-ISIMRole {
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    param (
+        [Parameter(Mandatory = $true,
+                   ValueFromPipelineByPropertyName = $true,
+                   Position = 0)]
+        [string]
+        $filter
+    )
+    begin {
+        Test-ISIMSession
+    }
+    process {
+    
+        $script:role_prx.searchRoles($script:rlsession,$filter)
 
-<#
-Export-ModuleMember -Function Connect-ISIM
-Export-ModuleMember -Function Get-ISIMServiceName2DN
-Export-ModuleMember -Function Get-ISIMContainerName2DN
-Export-ModuleMember -Function Get-ISIMPersonUID2DN
-Export-ModuleMember -Function Add-ISIMRoleToPerson
-Export-ModuleMember -Function Add-ISIMRoleToPersonDN
-Export-ModuleMember -Function Remove-ISIMRoleFromPerson
-Export-ModuleMember -Function New-ISIMAccountForPerson
-Export-ModuleMember -Function Set-ISIMPasswordsForPerson
-Export-ModuleMember -Function Get-ISIMPerson
+        #$script:person_prx.lookupPerson($script:psession,$p_dn)
 
 
-#>
+        
+    }
+
+
+}
+
+function Get-ISIMRoleByDN {
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    param (
+        [Parameter(Mandatory = $true,
+                   ValueFromPipelineByPropertyName = $true,
+                   Position = 0)]
+        [string]
+        $dn
+    )
+    begin {
+        Test-ISIMSession
+    }
+    process {
+    
+        $script:role_prx.lookupRole($script:rlsession,$dn)
+
+        #$script:person_prx.lookupPerson($script:psession,$p_dn)
+
+
+        
+    }
+
+
+}
